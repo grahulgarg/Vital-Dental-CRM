@@ -1,0 +1,29 @@
+# Environments
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database
+dental.db
+*.db
+*.sqlite3
+
+# Credentials
+*credentials.json
+key.json
+secrets.json
+
+# Dependencies
+node_modules/
+backend/venv/
+backend/__pycache__/
+*.pyc
+
+# Vercel
+.vercel/
+
+# OS Files
+.DS_Store
+Thumbs.db
