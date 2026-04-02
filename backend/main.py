@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import database as db
 import sheets_backup as sheets
 
