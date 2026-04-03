@@ -30,7 +30,7 @@ async def rewrite_api_path(request: Request, call_next):
 @app.on_event("startup")
 def startup():
     db.create_tables()
-    db.seed_data()
+    #db.seed_data()
 
 # ── Health check ───────────────────────────────────────────────────────────────
 @app.get("/")
