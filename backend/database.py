@@ -104,13 +104,13 @@ def seed_data():
             return  # already seeded
 
         patients = [
-            ("Priya Sharma",  "+91 98765 43210", "priya@email.com",  "1992-05-14", "B+", "2024-01-15"),
-            ("Rahul Gupta",   "+91 87654 32109", "rahul@email.com",  "1979-11-20", "O+", "2023-11-08"),
-            ("Anita Verma",   "+91 76543 21098", "anita@email.com",  "1996-02-10", "A+", "2024-05-22"),
+            ("Priya Sharma",  "+91 98765 43210", "priya@email.com",  32, "B+", "2024-01-15"),
+            ("Rahul Gupta",   "+91 87654 32109", "rahul@email.com",  44, "O+", "2023-11-08"),
+            ("Anita Verma",   "+91 76543 21098", "anita@email.com",  28, "A+", "2024-05-22"),
         ]
         for p in patients:
             conn.execute(
-                "INSERT INTO patients (name,phone,email,join_date,blood_group,address) VALUES (%s,%s,%s,%s,%s,'')", p)
+                "INSERT INTO patients (name,phone,email,age,blood_group,join_date,address) VALUES (%s,%s,%s,%s,%s,%s,'')", p)
 
         conn.execute("INSERT INTO appointments (patient_id,date,time,type,doctor,status,planned_cost) VALUES (1,'2025-03-15','10:30 AM','Follow-up','Dr. Mehta','Confirmed', 500)")
         conn.execute("INSERT INTO appointments (patient_id,date,time,type,doctor,status,planned_cost) VALUES (2,'2025-03-18','2:00 PM','Dental Implant Consult','Dr. Mehta','Scheduled', 1000)")
