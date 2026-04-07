@@ -181,12 +181,50 @@ def populate_patient_extras(p):
     return p
 
 
-# ── PATIENTS ───────────────────────────────────────────────────────────────────
 def get_all_patients():
+    from collections import defaultdict
     with get_conn() as conn:
         patients = rows_to_list(conn.execute("SELECT * FROM patients ORDER BY name").fetchall())
+        
+        # Batch fetch all related entities to eliminate the N+1 query problem on Supabase
+        appointments = rows_to_list(conn.execute("SELECT * FROM appointments ORDER BY date, time").fetchall())
+        medications = rows_to_list(conn.execute("SELECT * FROM medications ORDER BY prescribed DESC").fetchall())
+        payments = rows_to_list(conn.execute("SELECT * FROM payments ORDER BY date DESC").fetchall())
+        treatments = rows_to_list(conn.execute("SELECT * FROM treatments ORDER BY date DESC").fetchall())
+        
+        # Group them in Python dictionaries by patient_id
+        appts_by_pat = defaultdict(list)
+        for a in appointments: appts_by_pat[a["patient_id"]].append(a)
+            
+        meds_by_pat = defaultdict(list)
+        for m in medications: meds_by_pat[m["patient_id"]].append(m)
+            
+        pays_by_pat = defaultdict(list)
+        pays_by_tx = defaultdict(list)
+        for py in payments: 
+            pays_by_pat[py["patient_id"]].append(py)
+            if py.get("treatment_id"):
+                pays_by_tx[py["treatment_id"]].append(py)
+            
+        txs_by_pat = defaultdict(list)
+        for t in treatments: 
+            tx_pays = pays_by_tx[t["id"]]
+            t["total_paid"] = sum(pay["amount"] for pay in tx_pays)
+            t["balance"] = max(0, t["cost"] - t["total_paid"])
+            txs_by_pat[t["patient_id"]].append(t)
+            
         for p in patients:
-            populate_patient_extras(p)
+            pid = p["id"]
+            p["appointments"] = appts_by_pat[pid]
+            p["medications"]  = meds_by_pat[pid]
+            p["payments"]     = pays_by_pat[pid]
+            p["treatments"]   = txs_by_pat[pid]
+            
+            p["invoices"] = []
+            p["joinDate"]    = p.pop("join_date", None)
+            p["bloodGroup"]  = p.pop("blood_group", None)
+            p["isCompleted"] = bool(p.pop("is_completed", 0))
+            
         return patients
 
 def get_patient_by_id(patient_id: int):

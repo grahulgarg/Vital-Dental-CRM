@@ -175,7 +175,7 @@ def get_treatments(patient_id: int):
 def create_treatment(patient_id: int, t: TreatmentCreate):
     new_treatment = db.create_treatment(patient_id, t.date, t.type, t.doctor, t.cost, t.notes, t.status)
     try:
-        #sheets.backup_treatment(new_treatment)
+        sheets.backup_treatment(new_treatment)
     except Exception as sheet_err:
         print(f"Sheets backup failed for treatment: {sheet_err}")
     return new_treatment
