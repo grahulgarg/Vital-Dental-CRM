@@ -11,7 +11,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 def get_conn():
     if not DATABASE_URL:
         raise ValueError("DATABASE_URL environment variable is missing!")
-    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row, autocommit=True)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row, autocommit=True, prepare_threshold=None)
     return conn
 
 # ── Schema ─────────────────────────────────────────────────────────────────────

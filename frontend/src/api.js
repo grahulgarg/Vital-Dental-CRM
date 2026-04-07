@@ -1,19 +1,28 @@
 // src/api.js  –  All calls to the FastAPI backend
 // Set REACT_APP_API_URL in .env.production when deploying to Vercel
 
-const BASE = process.env.REACT_APP_API_URL || "http://localhost:8000";
+// Auto-detect Vercel environment: use relative /api path bridging the monorepo
+const BASE = process.env.NODE_ENV === "production" 
+  ? "/api" 
+  : (process.env.REACT_APP_API_URL || "http://localhost:8000");
 
 async function req(method, path, body) {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `HTTP ${res.status}`);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      if (res.status === 504) throw new Error("Server took too long to respond (Cold Start). Please try again.");
+      if (res.status === 500) throw new Error("Internal Server Error. The database might be waking up.");
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    return res.status === 204 ? null : res.json();
+  } catch (err) {
+    throw new Error(err.message === "Failed to fetch" ? "Network error: Server might be unavailable." : err.message);
   }
-  return res.status === 204 ? null : res.json();
 }
 
 // ── Patients ──────────────────────────────────────────────────────────────────

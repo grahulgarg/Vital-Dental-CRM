@@ -68,10 +68,13 @@ def get_patient(patient_id: int):
     return patient
 
 @app.post("/patients", status_code=201)
-def create_patient(p: PatientCreate, background_tasks: BackgroundTasks):
+def create_patient(p: PatientCreate):
     try:
         new_patient = db.create_patient(p.name, p.phone, p.email, p.dob, p.blood_group, p.force)
-        background_tasks.add_task(sheets.backup_patient, new_patient)
+        try:
+            sheets.backup_patient(new_patient)
+        except Exception as sheet_err:
+            print(f"Sheets backup failed for patient: {sheet_err}")
         return new_patient
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
@@ -125,9 +128,12 @@ def get_all_appointments(date: Optional[str] = None):
     return []
 
 @app.post("/patients/{patient_id}/appointments", status_code=201)
-def create_appointment(patient_id: int, a: AppointmentCreate, background_tasks: BackgroundTasks):
+def create_appointment(patient_id: int, a: AppointmentCreate):
     new_appt = db.create_appointment(patient_id, a.date, a.time, a.type, a.doctor, a.status, a.plannedCost, a.reminderSent)
-    background_tasks.add_task(sheets.backup_appointment, new_appt)
+    try:
+        sheets.backup_appointment(new_appt)
+    except Exception as sheet_err:
+        print(f"Sheets backup failed for appointment: {sheet_err}")
     return new_appt
 
 @app.put("/patients/{patient_id}/appointments/{appt_id}")
@@ -166,9 +172,12 @@ def get_treatments(patient_id: int):
     return db.get_treatments(patient_id)
 
 @app.post("/patients/{patient_id}/treatments", status_code=201)
-def create_treatment(patient_id: int, t: TreatmentCreate, background_tasks: BackgroundTasks):
+def create_treatment(patient_id: int, t: TreatmentCreate):
     new_treatment = db.create_treatment(patient_id, t.date, t.type, t.doctor, t.cost, t.notes, t.status)
-    background_tasks.add_task(sheets.backup_treatment, new_treatment)
+    try:
+        sheets.backup_treatment(new_treatment)
+    except Exception as sheet_err:
+        print(f"Sheets backup failed for treatment: {sheet_err}")
     return new_treatment
 
 @app.put("/patients/{patient_id}/treatments/{treatment_id}")
@@ -217,9 +226,12 @@ class PaymentUpdate(BaseModel):
     method: Optional[str] = None
 
 @app.post("/patients/{patient_id}/payments", status_code=201)
-def create_payment(patient_id: int, p: PaymentCreate, background_tasks: BackgroundTasks):
+def create_payment(patient_id: int, p: PaymentCreate):
     new_payment = db.create_payment(patient_id, p.date, p.amount, p.method, p.treatment_id)
-    background_tasks.add_task(sheets.backup_payment, new_payment)
+    try:
+        sheets.backup_payment(new_payment)
+    except Exception as sheet_err:
+        print(f"Sheets backup failed for payment: {sheet_err}")
     return new_payment
 
 @app.put("/payments/{payment_id}")
