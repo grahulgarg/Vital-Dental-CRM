@@ -584,7 +584,7 @@ export default function DentalDashboard() {
   const activePatients = filteredPatients.filter(p => !p.isCompleted);
   const completedPatients = filteredPatients.filter(p => p.isCompleted);
 
-  const allAppointments = patients.flatMap(p =>
+  const allAppointments = activePatients.flatMap(p =>
     (p.appointments||[]).map(a => ({ ...a, patientName: p.name, patientId: p.id }))
   ).sort((a,b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   const navItems = [
