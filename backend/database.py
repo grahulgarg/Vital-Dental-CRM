@@ -275,6 +275,11 @@ def update_patient(patient_id: int, fields: dict):
     mapped = {col_map.get(k, k): v for k, v in fields.items()}
     # Drop any dob key (legacy) - age is stored directly
     mapped.pop("dob", None)
+    
+    # Cast boolean is_completed to integer for Postgres
+    if "is_completed" in mapped and isinstance(mapped["is_completed"], bool):
+        mapped["is_completed"] = 1 if mapped["is_completed"] else 0
+        
     if not mapped:
         return get_patient_by_id(patient_id)
     set_clause = ", ".join(f"{k}=%s" for k in mapped)
@@ -321,11 +326,14 @@ def create_appointment(patient_id, appt_date, time, appt_type, doctor, status="S
         return row_to_dict(conn.execute("SELECT * FROM appointments WHERE id=%s", (new_id,)).fetchone())
 
 def update_appointment(appt_id: int, fields: dict):
-    if not fields:
-        return None
+    if not fields: return None
     # map camelCase to snake_case
     col_map = {"plannedCost": "planned_cost", "reminderSent": "reminder_sent"}
     mapped = {col_map.get(k, k): v for k, v in fields.items()}
+    
+    if "reminder_sent" in mapped and isinstance(mapped["reminder_sent"], bool):
+        mapped["reminder_sent"] = 1 if mapped["reminder_sent"] else 0
+        
     set_clause = ", ".join(f"{k}=%s" for k in mapped)
     values = list(mapped.values()) + [appt_id]
     with get_conn() as conn:
