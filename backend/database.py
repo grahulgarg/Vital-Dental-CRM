@@ -271,7 +271,7 @@ def update_patient(patient_id: int, fields: dict):
     if not fields:
         return get_patient_by_id(patient_id)
     # map camelCase keys from React → snake_case DB columns
-    col_map = {"bloodGroup": "blood_group", "joinDate": "join_date", "isCompleted": "is_completed"}
+    col_map = {"bloodGroup": "blood_group", "joinDate": "join_date", "isCompleted": "is_completed", "reviewStatus": "review_status"}
     mapped = {col_map.get(k, k): v for k, v in fields.items()}
     # Drop any dob key (legacy) - age is stored directly
     mapped.pop("dob", None)

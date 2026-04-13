@@ -594,7 +594,11 @@ export default function DentalDashboard() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const activePatients = filteredPatients.filter(p => !p.isCompleted);
-  const completedPatients = filteredPatients.filter(p => p.isCompleted);
+  const completedPatients = filteredPatients.filter(p => p.isCompleted).sort((a, b) => {
+    const aDate = a.treatments?.[0]?.date || a.timestamp || "1970-01-01";
+    const bDate = b.treatments?.[0]?.date || b.timestamp || "1970-01-01";
+    return bDate.localeCompare(aDate);
+  });
 
   const allAppointments = activePatients.flatMap(p =>
     (p.appointments||[]).map(a => ({ ...a, patientName: p.name, patientId: p.id }))
@@ -926,39 +930,24 @@ export default function DentalDashboard() {
                           <td style={{ padding:"14px 16px", fontSize:13, color:"#9ca3af", cursor:"pointer" }} onClick={() => openPatient(p)}>
                             {lastTreatment ? lastTreatment.type : "—"}
                           </td>
-                          {/* Review Status column */}
                           <td style={{ padding:"10px 16px", textAlign:"center" }} onClick={e => e.stopPropagation()}>
-                            {isReviewed ? (
-                              <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                                <span style={{ background:"#d1fae5", color:"#065f46", padding:"4px 12px",
-                                  borderRadius:20, fontSize:12, fontWeight:700, display:"inline-flex", alignItems:"center", gap:5 }}>
-                                  ✅ Reviewed
-                                </span>
-                                <button
-                                  onClick={() => updateReviewStatus(p.id, "pending")}
-                                  style={{ background:"none", border:"none", fontSize:10, color:"#94a3b8",
-                                    cursor:"pointer", textDecoration:"underline", padding:0 }}>
-                                  Reset to Pending
-                                </button>
-                              </div>
-                            ) : (
-                              <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                                <button
-                                  onClick={() => { setForm({ reviewPatientName: p.name, reviewPatientPhone: p.phone, reviewPatientId: p.id }); setModal("send-review"); }}
-                                  style={{ background:"#25D366", border:"none", borderRadius:8, padding:"6px 12px",
-                                    cursor:"pointer", display:"inline-flex", alignItems:"center", gap:6,
-                                    color:"#fff", fontSize:12, fontWeight:700, whiteSpace:"nowrap",
-                                    boxShadow:"0 2px 8px rgba(37,211,102,0.3)" }}>
-                                  💬 Send Review
-                                </button>
-                                <button
-                                  onClick={() => updateReviewStatus(p.id, "reviewed")}
-                                  style={{ background:"none", border:"none", fontSize:10, color:"#94a3b8",
-                                    cursor:"pointer", textDecoration:"underline", padding:0 }}>
-                                  Mark as Reviewed
-                                </button>
-                              </div>
-                            )}
+                            <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                              <button
+                                disabled={isReviewed}
+                                onClick={() => { setForm({ reviewPatientName: p.name, reviewPatientPhone: p.phone, reviewPatientId: p.id }); setModal("send-review"); }}
+                                style={{ background: isReviewed ? "#e5e7eb" : "#25D366", border:"none", borderRadius:8, padding:"6px 12px",
+                                  cursor: isReviewed ? "not-allowed" : "pointer", display:"inline-flex", alignItems:"center", gap:6,
+                                  color: isReviewed ? "#9ca3af" : "#fff", fontSize:12, fontWeight:700, whiteSpace:"nowrap",
+                                  boxShadow: isReviewed ? "none" : "0 2px 8px rgba(37,211,102,0.3)" }}>
+                                {isReviewed ? "✅ Reviewed" : "💬 Send Review"}
+                              </button>
+                              <button
+                                onClick={() => updateReviewStatus(p.id, isReviewed ? "pending" : "reviewed")}
+                                style={{ background:"none", border:"none", fontSize:10, color:"#94a3b8",
+                                  cursor:"pointer", textDecoration:"underline", padding:0 }}>
+                                {isReviewed ? "Reset to Pending" : "Mark as Reviewed"}
+                              </button>
+                            </div>
                           </td>
                           <td style={{ padding:"14px 16px", textAlign:"center", cursor:"pointer" }} onClick={() => openPatient(p)}>
                             <span style={{ background:"#f1f5f9", color:"#64748b", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600 }}>
