@@ -241,6 +241,18 @@ export default function DentalDashboard() {
 
   const addPatient = async (force=false) => {
     if (!form.name || !form.phone) return;
+    
+    // Check locally for existing patient by phone number (strip spaces/characters)
+    const cleanPhone = form.phone.replace(/[\s\-()+]/g, "");
+    const matchingPatient = patients.find(p => p.phone && p.phone.replace(/[\s\-()+]/g, "") === cleanPhone);
+
+    if (matchingPatient) {
+      showToast(`Profile already exists for ${matchingPatient.name}`, "info");
+      openPatient(matchingPatient);
+      closeModal();
+      return;
+    }
+
     setSaving(true);
     try {
       const created = await api.createPatient({
@@ -2006,8 +2018,14 @@ export default function DentalDashboard() {
       {/* ══ MODALS ══ */}
       {modal==="add-patient" && (
         <Modal isMobile={isMobile} title="Add New Patient" onClose={closeModal}>
-          <Inp label="Full Name *" placeholder="e.g. Raj Kumar" value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
-          <Inp label="Phone Number *" placeholder="+91 98765 43210" value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} />
+          <datalist id="patient-names">
+            {patients.map(p => <option key={`n-${p.id}`} value={p.name}>{p.phone}</option>)}
+          </datalist>
+          <datalist id="patient-phones">
+            {patients.map(p => <option key={`p-${p.id}`} value={p.phone}>{p.name}</option>)}
+          </datalist>
+          <Inp list="patient-names" label="Full Name *" placeholder="e.g. Raj Kumar" value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))} />
+          <Inp list="patient-phones" label="Phone Number *" placeholder="+91 98765 43210" value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} />
           <Inp label="Email" placeholder="patient@email.com" value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))} />
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <Inp label="Age" type="number" placeholder="32" value={form.age||""} onChange={e=>setForm(f=>({...f,age:e.target.value}))} />
