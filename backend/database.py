@@ -84,6 +84,8 @@ def create_tables():
         # Postgres migration blocks using anonymous DO blocks
         migrations = [
             "DO $$ BEGIN ALTER TABLE patients ADD COLUMN is_completed INTEGER DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END; $$;",
+            "DO $$ BEGIN ALTER TABLE patients ADD COLUMN is_recall INTEGER DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END; $$;",
+            "DO $$ BEGIN ALTER TABLE patients ADD COLUMN recall_note TEXT DEFAULT ''; EXCEPTION WHEN duplicate_column THEN END; $$;",
             "DO $$ BEGIN ALTER TABLE appointments ADD COLUMN planned_cost REAL DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END; $$;",
             "DO $$ BEGIN ALTER TABLE appointments ADD COLUMN reminder_sent INTEGER DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END; $$;",
             "DO $$ BEGIN ALTER TABLE patients ADD COLUMN age INTEGER DEFAULT NULL; EXCEPTION WHEN duplicate_column THEN END; $$;",
@@ -224,6 +226,8 @@ def get_all_patients():
             p["joinDate"]    = p.pop("join_date", None)
             p["bloodGroup"]  = p.pop("blood_group", None)
             p["isCompleted"] = bool(p.pop("is_completed", 0))
+            p["isRecall"]    = bool(p.pop("is_recall", 0))
+            p["recallNote"]  = p.pop("recall_note", "")
             
         return patients
 
@@ -271,7 +275,7 @@ def update_patient(patient_id: int, fields: dict):
     if not fields:
         return get_patient_by_id(patient_id)
     # map camelCase keys from React → snake_case DB columns
-    col_map = {"bloodGroup": "blood_group", "joinDate": "join_date", "isCompleted": "is_completed", "reviewStatus": "review_status"}
+    col_map = {"bloodGroup": "blood_group", "joinDate": "join_date", "isCompleted": "is_completed", "reviewStatus": "review_status", "isRecall": "is_recall", "recallNote": "recall_note"}
     mapped = {col_map.get(k, k): v for k, v in fields.items()}
     # Drop any dob key (legacy) - age is stored directly
     mapped.pop("dob", None)
@@ -279,6 +283,9 @@ def update_patient(patient_id: int, fields: dict):
     # Cast boolean is_completed to integer for Postgres
     if "is_completed" in mapped and isinstance(mapped["is_completed"], bool):
         mapped["is_completed"] = 1 if mapped["is_completed"] else 0
+        
+    if "is_recall" in mapped and isinstance(mapped["is_recall"], bool):
+        mapped["is_recall"] = 1 if mapped["is_recall"] else 0
         
     if not mapped:
         return get_patient_by_id(patient_id)

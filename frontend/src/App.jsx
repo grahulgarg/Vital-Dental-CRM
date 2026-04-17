@@ -142,6 +142,7 @@ export default function DentalDashboard() {
   const [error,            setError]            = useState(null);
   const [apptsView,        setApptsView]        = useState("list");
   const [archiveExpanded,  setArchiveExpanded]  = useState(false);
+  const [recallExpanded,   setRecallExpanded]   = useState(false);
   const [mobileApptDate,   setMobileApptDate]   = useState(TODAY);
 
   // Finance states
@@ -517,12 +518,18 @@ export default function DentalDashboard() {
     finally { setSaving(false); }
   };
 
-  const markPatientComplete = async (isCompleted) => {
+  const setPatientStatus = async (status, note="") => {
     try {
-      const updated = await api.updatePatient(selectedPatient.id, { isCompleted });
+      const payload = {};
+      if (status === "active") { payload.isCompleted = false; payload.isRecall = false; }
+      if (status === "recall") { payload.isCompleted = false; payload.isRecall = true; payload.recallNote = note; }
+      if (status === "completed") { payload.isCompleted = true; payload.isRecall = false; }
+      
+      const updated = await api.updatePatient(selectedPatient.id, payload);
       setPatients(prev => prev.map(p => p.id === updated.id ? updated : p));
       setSelectedPatient(updated);
-      showToast(isCompleted ? `${updated.name} moved to Archive` : `${updated.name} restored to Active`);
+      showToast(`${updated.name} status updated to ${status}`);
+      closeModal();
     } catch(e) { showToast(e.message, "error"); }
   };
 
@@ -593,7 +600,8 @@ export default function DentalDashboard() {
     ))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const activePatients = filteredPatients.filter(p => !p.isCompleted);
+  const activePatients = filteredPatients.filter(p => !p.isCompleted && !p.isRecall);
+  const recallPatients = filteredPatients.filter(p => !p.isCompleted && p.isRecall);
   const completedPatients = filteredPatients.filter(p => p.isCompleted).sort((a, b) => {
     const aDate = a.treatments?.[0]?.date || a.timestamp || "1970-01-01";
     const bDate = b.treatments?.[0]?.date || b.timestamp || "1970-01-01";
@@ -885,6 +893,39 @@ export default function DentalDashboard() {
               </div>
             )}
 
+            {/* ── Recall Patients ── */}
+            {recallPatients.length > 0 && (
+              <div style={{ background:"#fff", borderRadius:14, border:"1px solid #f1f5f9",
+                boxShadow:"0 1px 4px rgba(0,0,0,0.06)", overflow:"hidden", marginBottom:24 }}>
+                <button onClick={() => setRecallExpanded(!recallExpanded)}
+                  style={{ width:"100%", padding:"16px 20px", border:"none", background:"#fffbeb",
+                    display:"flex", alignItems:"center", gap:10, cursor:"pointer", fontFamily:"inherit",
+                    textAlign:"left" }}>
+                  <span style={{ fontSize:14, color:"#d97706", transition:"transform 0.2s",
+                    display:"inline-block", transform: recallExpanded ? "rotate(90deg)":"rotate(0deg)" }}>▶</span>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:"#d97706" }}></div>
+                  <span style={{ fontWeight:700, fontSize:15, color:"#b45309" }}>Recall Patients</span>
+                  <span style={{ background:"#fef3c7", color:"#d97706", padding:"2px 10px", borderRadius:20, fontSize:12, fontWeight:700, marginLeft:4 }}>{recallPatients.length}</span>
+                </button>
+                {recallExpanded && (
+                  <table style={{ width:"100%", borderCollapse:"collapse", borderTop:"1px solid #fef3c7" }}>
+                    <thead>
+                      <tr style={{ background:"#fef3c7", borderBottom:"1px solid #fef3c7" }}>
+                        {["Patient","Phone","Last Treatment","Review Status","Total Appts","Total Paid"].map(h => (
+                          <th key={h} style={{ padding:"12px 16px", textAlign: h==="Total Appts"||h==="Total Paid"||h==="Review Status" ? "center":"left",
+                            fontSize:11, fontWeight:700, color:"#b45309", textTransform:"uppercase", letterSpacing:0.5,
+                            whiteSpace:"nowrap" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recallPatients.map(p => <PatientRow key={p.id} p={p} />)}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
             {/* ── Completed Archive ── */}
             {completedPatients.length > 0 && (
               <div style={{ background:"#fff", borderRadius:14, border:"1px solid #f1f5f9",
@@ -988,14 +1029,21 @@ export default function DentalDashboard() {
                         <div>
                         <h2 style={{ margin:0, fontSize:20, fontWeight:700, lineHeight:1.2 }}>{selectedPatient.name}</h2>
                         <div style={{ color:"#94a3b8", fontSize:13, marginTop:4 }}>Id: PT-{selectedPatient.id.toString().padStart(4,'0')}</div>
-                        {selectedPatient.isCompleted && (
+                        {selectedPatient.isCompleted ? (
                           <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:5,
                             background:"rgba(148,163,184,0.2)", border:"1px solid rgba(148,163,184,0.4)",
                             borderRadius:20, padding:"2px 10px" }}>
                             <span style={{ fontSize:10, color:"#94a3b8" }}>●</span>
                             <span style={{ fontSize:11, color:"#94a3b8", fontWeight:600, letterSpacing:0.5 }}>ARCHIVED</span>
                           </div>
-                        )}
+                        ) : selectedPatient.isRecall ? (
+                          <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:5,
+                            background:"rgba(245,158,11,0.2)", border:"1px solid rgba(245,158,11,0.4)",
+                            borderRadius:20, padding:"2px 10px" }}>
+                            <span style={{ fontSize:10, color:"#f59e0b" }}>●</span>
+                            <span style={{ fontSize:11, color:"#f59e0b", fontWeight:600, letterSpacing:0.5 }}>RECALL LIST</span>
+                          </div>
+                        ) : null}
                         </div>
                     </div>
                     
@@ -1020,10 +1068,21 @@ export default function DentalDashboard() {
                         </div>
                         {selectedPatient.isCompleted ? (
                             <Btn small variant="ghost" style={{ width:"100%", color:"#059669", border:"1.5px solid #059669", background:"#f0fdf4" }}
-                              onClick={() => markPatientComplete(false)}>↩ Restore to Active</Btn>
+                              onClick={() => setPatientStatus("active")}>↩ Restore to Active</Btn>
+                        ) : selectedPatient.isRecall ? (
+                            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                                <Btn small variant="ghost" style={{ width:"100%", color:"#059669", border:"1.5px solid #059669", background:"#f0fdf4" }}
+                                  onClick={() => setPatientStatus("active")}>↩ Return to Active</Btn>
+                                <Btn small variant="ghost" style={{ width:"100%", color:"#64748b", border:"1.5px solid #e5e7eb" }}
+                                  onClick={() => setPatientStatus("completed")}>☑ Mark as Completed</Btn>
+                            </div>
                         ) : (
-                            <Btn small variant="ghost" style={{ width:"100%", color:"#64748b", border:"1.5px solid #e5e7eb" }}
-                              onClick={() => markPatientComplete(true)}>☑ Mark as Completed</Btn>
+                            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                                <Btn small variant="ghost" style={{ width:"100%", color:"#d97706", border:"1.5px solid #fcd34d", background:"#fffbeb" }}
+                                  onClick={() => setModal("add-recall")}>📅 Add to Recall List</Btn>
+                                <Btn small variant="ghost" style={{ width:"100%", color:"#64748b", border:"1.5px solid #e5e7eb" }}
+                                  onClick={() => setPatientStatus("completed")}>☑ Mark as Completed</Btn>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -1041,7 +1100,7 @@ export default function DentalDashboard() {
                 
                 {/* Tabs */}
                 <div style={{ display:"flex", gap:4, marginBottom:20, background:"#f1f5f9", borderRadius:10, padding:4, overflowX:"auto" }}>
-                {["overview","appointments","treatments","medications", "ledger"].map(tab => (
+                {["overview","appointments","treatments","medications","ledger"].concat(selectedPatient.isRecall ? ["recall"] : []).map(tab => (
                     <button key={tab} onClick={() => setPatientTab(tab)} style={{
                     padding:"8px 18px", borderRadius:8, border:"none",
                     background:patientTab===tab?"#fff":"transparent",
@@ -1216,6 +1275,20 @@ export default function DentalDashboard() {
                         <Btn small variant="danger" onClick={() => removeMedication(m.id)}>✕</Btn>
                     </div>
                     ))}
+                </div>
+                )}
+                {/* Recall Tab */}
+                {patientTab==="recall" && selectedPatient.isRecall && (
+                <div style={{ background:"#fff", borderRadius:14, padding:20, border:"1px solid #fef3c7" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+                        <div style={{ width:10, height:10, borderRadius:"50%", background:"#f59e0b" }}></div>
+                        <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#b45309" }}>Treatment Recall Notes</h3>
+                    </div>
+                    <div style={{ background:"#fffbeb", border:"1px solid #fde68a", padding:20, borderRadius:12 }}>
+                        <div style={{ fontSize:14, color:"#92400e", whiteSpace:"pre-wrap", lineHeight:1.6 }}>
+                            {selectedPatient.recallNote || "No notes provided upon moving to recall list."}
+                        </div>
+                    </div>
                 </div>
                 )}
                 
@@ -2005,6 +2078,18 @@ export default function DentalDashboard() {
       )}
 
       {/* ══ MODALS ══ */}
+      {modal==="add-recall" && (
+        <Modal isMobile={isMobile} title="Add to Recall List" onClose={closeModal}>
+          <div style={{ color:"#64748b", fontSize:14, marginBottom:16 }}>
+            Set <strong>{selectedPatient?.name}</strong> to Recall status. They will be removed from the active list until they return.
+          </div>
+          <Inp label="Recall Note / Future Treatment Details" placeholder="Requires a crown on lower right molar in 6 months..." value={form.recallNote||""} onChange={e=>setForm(f=>({...f,recallNote:e.target.value}))} />
+          <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:8 }}>
+            <Btn variant="ghost" onClick={closeModal}>Cancel</Btn>
+            <Btn onClick={() => setPatientStatus('recall', form.recallNote)} loading={saving}>Add to Recall</Btn>
+          </div>
+        </Modal>
+      )}
       {modal==="add-patient" && (
         <Modal isMobile={isMobile} title="Add New Patient" onClose={closeModal}>
           <datalist id="patient-names">
