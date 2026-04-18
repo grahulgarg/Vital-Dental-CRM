@@ -53,8 +53,14 @@ class PatientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     dob: Optional[str] = None
+    age: Optional[int] = None
+    address: Optional[str] = None
+    bloodGroup: Optional[str] = None
     blood_group: Optional[str] = None
     isCompleted: Optional[bool] = None
+    isRecall: Optional[bool] = None
+    recallNote: Optional[str] = None
+    reviewStatus: Optional[str] = None
 
 @app.get("/patients")
 def get_patients():
