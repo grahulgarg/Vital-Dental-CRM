@@ -124,6 +124,305 @@ const useIsMobile = () => {
   return isMobile;
 };
 
+const RATE_SHEET_DATA = [
+  {
+    "category": "Diagnostic Charges",
+    "procedures": [
+      {
+        "name": "Professional Consultation",
+        "rate": "500"
+      },
+      {
+        "name": "IOPA Radiograph",
+        "rate": "200"
+      }
+    ]
+  },
+  {
+    "category": "Restoration (Per Tooth)",
+    "procedures": [
+      {
+        "name": "Temporary Restoration",
+        "rate": "500"
+      },
+      {
+        "name": "GIC Restoration",
+        "rate": "900"
+      },
+      {
+        "name": "Composite Restoration (One surface)",
+        "rate": "1300"
+      },
+      {
+        "name": "Composite Restoration (Two surface)",
+        "rate": "1800"
+      },
+      {
+        "name": "Composite Restoration (Three surface)",
+        "rate": "2500"
+      },
+      {
+        "name": "Pit & Fissure Sealant",
+        "rate": "900"
+      },
+      {
+        "name": "Direct composite veneer",
+        "rate": "3000"
+      },
+      {
+        "name": "Fiber Post Bonding",
+        "rate": "2000"
+      }
+    ]
+  },
+  {
+    "category": "Periodontal Therapy",
+    "procedures": [
+      {
+        "name": "Oral Prophylaxis (Upper & Lower jaw)",
+        "rate": "2000-4000"
+      },
+      {
+        "name": "Flap Surgery (Quadrant)",
+        "rate": "3500"
+      },
+      {
+        "name": "Flap Surgery (Full mouth)",
+        "rate": "15000"
+      },
+      {
+        "name": "Bone Graft Placement (1 cc)",
+        "rate": "5000"
+      },
+      {
+        "name": "Curettage (2-3 teeth region)",
+        "rate": "1500"
+      },
+      {
+        "name": "Splinting of teeth (3-6 teeth)",
+        "rate": "2500"
+      },
+      {
+        "name": "Gingivectomy (Quadrant)",
+        "rate": "3000"
+      }
+    ]
+  },
+  {
+    "category": "Endodontic Therapy",
+    "procedures": [
+      {
+        "name": "Root Canal Treatment (Anterior)",
+        "rate": "4000"
+      },
+      {
+        "name": "Root Canal Treatment (Premolar)",
+        "rate": "5000"
+      },
+      {
+        "name": "Root Canal Treatment (Molar)",
+        "rate": "5500"
+      },
+      {
+        "name": "Root Canal Treatment (Wisdom/Calcified Tooth)",
+        "rate": "6000"
+      },
+      {
+        "name": "Custom Post Bonding",
+        "rate": "2000"
+      }
+    ]
+  },
+  {
+    "category": "Prosthodontic Therapy",
+    "procedures": [
+      {
+        "name": "Provisional Acrylic Crown",
+        "rate": "1000"
+      },
+      {
+        "name": "Indirect Ceramic Veneer",
+        "rate": "4000"
+      },
+      {
+        "name": "PFM Crown (Vita) (one tooth)",
+        "rate": "4000"
+      },
+      {
+        "name": "Zircon + Ceramic/Monolith Crown (one tooth)",
+        "rate": "8000-15000"
+      },
+      {
+        "name": "Co-Cr Metal Crown (one tooth)",
+        "rate": "2000"
+      },
+      {
+        "name": "Implant Ceramic Crown (one tooth)",
+        "rate": "7000-10000"
+      },
+      {
+        "name": "Complete Dentures (either Upper or Lower)",
+        "rate": "10000"
+      },
+      {
+        "name": "Complete Dentures (Upper and Lower both)",
+        "rate": "20000-40000"
+      },
+      {
+        "name": "Flexible Partial Denture (extending to two quadrants in one jaw)",
+        "rate": "7500"
+      },
+      {
+        "name": "Cast Partial Denture (one quadrant)",
+        "rate": "5500"
+      },
+      {
+        "name": "Cast Partial Denture (extending to two quadrants in one jaw)",
+        "rate": "7500"
+      },
+      {
+        "name": "Acrylic Partial Denture (one quadrant)",
+        "rate": "4500"
+      },
+      {
+        "name": "Acrylic Partial Denture (extending to two quadrants in one jaw)",
+        "rate": "5500"
+      },
+      {
+        "name": "Clear Night Guard (one jaw)",
+        "rate": "3500"
+      }
+    ]
+  },
+  {
+    "category": "Orthodontic Therapy",
+    "procedures": [
+      {
+        "name": "Non-self-ligating braces therapy (non extraction cases)",
+        "rate": "32000"
+      },
+      {
+        "name": "Non-self-ligating braces therapy (extraction cases)",
+        "rate": "37000"
+      },
+      {
+        "name": "Self-ligating braces therapy (non extraction case)",
+        "rate": "42000"
+      },
+      {
+        "name": "Self-ligating braces therapy (extraction case)",
+        "rate": "47000"
+      },
+      {
+        "name": "Clear aligner therapy (non extraction case)",
+        "rate": "140000"
+      },
+      {
+        "name": "Clear aligner therapy (extraction case)",
+        "rate": "190000"
+      },
+      {
+        "name": "Clear retainer (one jaw)",
+        "rate": "4500"
+      }
+    ]
+  },
+  {
+    "category": "Oral Surgical Therapy",
+    "procedures": [
+      {
+        "name": "Extraction of tooth (Anterior)",
+        "rate": "1500"
+      },
+      {
+        "name": "Extraction of tooth (Premolar)",
+        "rate": "2000"
+      },
+      {
+        "name": "Extraction of tooth (Molar)",
+        "rate": "2500"
+      },
+      {
+        "name": "Implant placement (one)",
+        "rate": "32000"
+      },
+      {
+        "name": "Wisdom/Impacted tooth extraction (Lower jaw)",
+        "rate": "6000"
+      },
+      {
+        "name": "Wisdom/Impacted tooth extraction (Upper jaw)",
+        "rate": "4500"
+      },
+      {
+        "name": "Cyst removal (one site)",
+        "rate": "6000"
+      },
+      {
+        "name": "Bone plating for fracture reduction (one site)",
+        "rate": "9000"
+      },
+      {
+        "name": "TMJ relocation (non-surgical)",
+        "rate": "4000"
+      },
+      {
+        "name": "Frenectomy (one site)",
+        "rate": "3500"
+      },
+      {
+        "name": "Interdental wiring/splinting (quadrant)",
+        "rate": "4500"
+      },
+      {
+        "name": "Apicectomy",
+        "rate": "5500"
+      },
+      {
+        "name": "Surgical exposure of tooth",
+        "rate": "4500"
+      },
+      {
+        "name": "Treatment of Dry socket",
+        "rate": "3500"
+      }
+    ]
+  },
+  {
+    "category": "Pedodontic Therapy",
+    "procedures": [
+      {
+        "name": "Extraction of milk tooth",
+        "rate": "1200"
+      },
+      {
+        "name": "Endodontic treatment (milk tooth)",
+        "rate": "4000"
+      },
+      {
+        "name": "Preformed Metal Crowns",
+        "rate": "3500"
+      },
+      {
+        "name": "Space Maintainers (One quadrant)",
+        "rate": "4000"
+      },
+      {
+        "name": "Myofunctional appliances",
+        "rate": "14000"
+      },
+      {
+        "name": "Fluoride therapy (one jaw)",
+        "rate": "3000"
+      },
+      {
+        "name": "Habit breaking appliance (one jaw)",
+        "rate": "2500"
+      }
+    ]
+  }
+];
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function DentalDashboard() {
   const isMobile = useIsMobile();
@@ -679,6 +978,7 @@ export default function DentalDashboard() {
     { id:"treatments",  label:"Treatments",   icon:"🦷" },
     { id:"revenue",     label:"Revenue",      icon:"💰" },
     { id:"reminders",   label:"Reminders",    icon:"🔔" },
+    { id:"rates",       label:"Rate Sheet",   icon:"📑" },
   ];
 
   return (
@@ -2166,7 +2466,38 @@ export default function DentalDashboard() {
         </div>
       )}
 
-      {/* ══ MODALS ══ */}
+      
+        {/* ── RATE SHEET VIEW ── */}
+        {!loading && view==="rates" && (
+          <div style={{ padding:32, flex:1, overflowY:"auto" }}>
+            <div style={{ marginBottom:32, borderBottom:"1px solid #e2e8f0", paddingBottom:24 }}>
+                <h1 style={{ margin:0, fontSize:28, fontWeight:800, color:"#0f172a", letterSpacing:"-0.5px" }}>Clinic Rate Sheet</h1>
+                <p style={{ margin:"6px 0 0", color:"#475569", fontSize:15 }}>Master reference for standard procedures and pricing.</p>
+            </div>
+            
+            <div style={{ columnCount: isMobile ? 1 : 2, columnGap: 32 }}>
+                {RATE_SHEET_DATA.map((cat, i) => (
+                    <div key={i} style={{ breakInside: "avoid", background:"#fff", border:"1px solid #cbd5e1", borderRadius:16, marginBottom:32, boxShadow:"0 4px 6px -1px rgba(0,0,0,0.03)", overflow:"hidden" }}>
+                        <div style={{ background:"#f8fafc", borderBottom:"1px solid #e2e8f0", padding:"16px 20px" }}>
+                            <h2 style={{ margin:0, fontSize:15, fontWeight:700, color:"#334155", letterSpacing:0.3, textTransform:"uppercase" }}>
+                                {cat.category}
+                            </h2>
+                        </div>
+                        <ul style={{ listStyle:"none", margin:0, padding:0 }}>
+                            {cat.procedures.map((proc, j) => (
+                                <li key={j} style={{ display:"flex", justifyContent:"space-between", padding:"14px 20px", borderBottom: j === cat.procedures.length - 1 ? "none" : "1px solid #f1f5f9" }}>
+                                    <span style={{ fontSize:14, color:"#1e293b", fontWeight:500, paddingRight:20 }}>{proc.name}</span>
+                                    <span style={{ fontSize:14, color:"#059669", fontWeight:700, whiteSpace:"nowrap" }}>₹{proc.rate}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══ MODALS ══ */}
       {modal==="add-recall" && (
         <Modal isMobile={isMobile} title="Add to Recall List" onClose={closeModal}>
           <div style={{ color:"#64748b", fontSize:14, marginBottom:16 }}>
