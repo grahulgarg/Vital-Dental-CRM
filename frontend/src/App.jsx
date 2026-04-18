@@ -950,7 +950,6 @@ export default function DentalDashboard() {
                       {activePatients.map(p => <PatientRow key={p.id} p={p} />)}
                     </tbody>
                   </table>
-                  </div>
                 )}
               </div>
             )}
@@ -984,7 +983,6 @@ export default function DentalDashboard() {
                       {recallPatients.map(p => <PatientRow key={p.id} p={p} />)}
                     </tbody>
                   </table>
-                  </div>
                 )}
               </div>
             )}
