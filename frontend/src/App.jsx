@@ -143,6 +143,10 @@ export default function DentalDashboard() {
   const [apptsView,        setApptsView]        = useState("list");
   const [archiveExpanded,  setArchiveExpanded]  = useState(false);
   const [recallExpanded,   setRecallExpanded]   = useState(false);
+  const [archiveSort,            setArchiveSort]            = useState("date-desc");
+  const [archiveFilterTreatment, setArchiveFilterTreatment] = useState("All");
+  const [archiveFilterReview,    setArchiveFilterReview]    = useState("All");
+  const [archiveFilterMonth,     setArchiveFilterMonth]     = useState("All");
   const [mobileApptDate,   setMobileApptDate]   = useState(TODAY);
 
   // Finance states
@@ -602,10 +606,67 @@ export default function DentalDashboard() {
 
   const activePatients = filteredPatients.filter(p => !p.isCompleted && !p.isRecall);
   const recallPatients = filteredPatients.filter(p => !p.isCompleted && p.isRecall);
-  const completedPatients = filteredPatients.filter(p => p.isCompleted).sort((a, b) => {
-    const aDate = a.treatments?.[0]?.date || a.timestamp || "1970-01-01";
-    const bDate = b.treatments?.[0]?.date || b.timestamp || "1970-01-01";
-    return bDate.localeCompare(aDate);
+  // Create base archive array
+  const baseCompleted = filteredPatients.filter(p => p.isCompleted);
+  
+  // Compute dynamic lists for filters
+  const availableTreatments = Array.from(new Set(
+      baseCompleted.flatMap(p => (p.treatments||[]).map(t => t.type))
+  )).filter(Boolean).sort();
+  
+  const availableMonths = Array.from(new Set(
+      baseCompleted.map(p => {
+          const dateStr = p.treatments?.[0]?.date || p.timestamp;
+          if (!dateStr) return null;
+          // Extract "YYYY-MM"
+          return dateStr.substring(0, 7);
+      })
+  )).filter(Boolean).sort((a,b) => b.localeCompare(a)); // sort desc
+  
+  // Format YYYY-MM to readable "Month YYYY" for UI
+  const formatMonth = (ym) => {
+      if (!ym) return "Unknown";
+      const parts = ym.split("-");
+      if (parts.length < 2) return ym;
+      const yr = parts[0];
+      const mo = parseInt(parts[1], 10);
+      const mNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return `${mNames[mo-1]} ${yr}`;
+  };
+
+  // Apply Filters & Sorting
+  const completedPatients = baseCompleted.filter(p => {
+      // 1. Treatment Filter
+      if (archiveFilterTreatment !== "All") {
+          const hasTx = (p.treatments||[]).some(t => t.type === archiveFilterTreatment);
+          if (!hasTx) return false;
+      }
+      // 2. Review Filter
+      if (archiveFilterReview !== "All") {
+          const isRev = p.reviewStatus === "reviewed";
+          if (archiveFilterReview === "Reviewed" && !isRev) return false;
+          if (archiveFilterReview === "Pending" && isRev) return false;
+      }
+      // 3. Month Filter (based on last treatment date)
+      if (archiveFilterMonth !== "All") {
+          const tDate = p.treatments?.[0]?.date || p.timestamp || "";
+          if (!tDate.startsWith(archiveFilterMonth)) return false;
+      }
+      return true;
+  }).sort((a, b) => {
+      const aDate = a.treatments?.[0]?.date || a.timestamp || "1970-01-01";
+      const bDate = b.treatments?.[0]?.date || b.timestamp || "1970-01-01";
+      const aAmt = (a.payments||[]).reduce((s, py) => s + py.amount, 0);
+      const bAmt = (b.payments||[]).reduce((s, py) => s + py.amount, 0);
+      const aType = a.treatments?.[0]?.type || "";
+      const bType = b.treatments?.[0]?.type || "";
+
+      if (archiveSort === "date-desc") return bDate.localeCompare(aDate);
+      if (archiveSort === "date-asc") return aDate.localeCompare(bDate);
+      if (archiveSort === "amount-desc") return bAmt - aAmt;
+      if (archiveSort === "amount-asc") return aAmt - bAmt;
+      if (archiveSort === "type-az") return aType.localeCompare(bType);
+      return bDate.localeCompare(aDate);
   });
 
   const allAppointments = activePatients.flatMap(p =>
@@ -889,6 +950,7 @@ export default function DentalDashboard() {
                       {activePatients.map(p => <PatientRow key={p.id} p={p} />)}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             )}
@@ -922,6 +984,7 @@ export default function DentalDashboard() {
                       {recallPatients.map(p => <PatientRow key={p.id} p={p} />)}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             )}
@@ -941,7 +1004,34 @@ export default function DentalDashboard() {
                   <span style={{ background:"#f1f5f9", color:"#64748b", padding:"2px 10px", borderRadius:20, fontSize:12, fontWeight:700, marginLeft:4 }}>{completedPatients.length}</span>
                 </button>
                 {archiveExpanded && (
-                  <table style={{ width:"100%", borderCollapse:"collapse", borderTop:"1px solid #f1f5f9" }}>
+                  <div style={{ borderTop:"1px solid #f1f5f9" }}>
+                    <div style={{ padding:"12px 16px", background:"#f8fafc", display:"flex", flexWrap:"wrap", gap:12, alignItems:"center", borderBottom:"1px solid #e2e8f0" }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:"#64748b", textTransform:"uppercase", letterSpacing:0.5 }}>Filters & Sort:</span>
+                      <select value={archiveFilterTreatment} onChange={e=>setArchiveFilterTreatment(e.target.value)} style={{ padding:"6px 10px", borderRadius:6, border:"1px solid #cbd5e1", background:"#fff", fontSize:13, fontWeight:600, color:"#334155", outline:"none", cursor:"pointer" }}>
+                        <option value="All">All Treatments</option>
+                        {availableTreatments.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <select value={archiveFilterMonth} onChange={e=>setArchiveFilterMonth(e.target.value)} style={{ padding:"6px 10px", borderRadius:6, border:"1px solid #cbd5e1", background:"#fff", fontSize:13, fontWeight:600, color:"#334155", outline:"none", cursor:"pointer" }}>
+                        <option value="All">All Months</option>
+                        {availableMonths.map(m => <option key={m} value={m}>{formatMonth(m)}</option>)}
+                      </select>
+                      <select value={archiveFilterReview} onChange={e=>setArchiveFilterReview(e.target.value)} style={{ padding:"6px 10px", borderRadius:6, border:"1px solid #cbd5e1", background:"#fff", fontSize:13, fontWeight:600, color:"#334155", outline:"none", cursor:"pointer" }}>
+                        <option value="All">Review Status</option>
+                        <option value="Reviewed">Reviewed</option>
+                        <option value="Pending">Pending</option>
+                      </select>
+                      
+                      <div style={{ flex:1 }} />
+                      
+                      <select value={archiveSort} onChange={e=>setArchiveSort(e.target.value)} style={{ padding:"6px 10px", borderRadius:6, border:"1px solid #cbd5e1", background:"#fff", fontSize:13, fontWeight:600, color:"#334155", outline:"none", cursor:"pointer" }}>
+                        <option value="date-desc">Sort: Latest Treatment</option>
+                        <option value="date-asc">Sort: Oldest Treatment</option>
+                        <option value="amount-desc">Sort: Highest Paid</option>
+                        <option value="amount-asc">Sort: Lowest Paid</option>
+                        <option value="type-az">Sort: Treatment A-Z</option>
+                      </select>
+                    </div>
+                  <table style={{ width:"100%", borderCollapse:"collapse", borderTop:"none" }}>
                     <thead>
                       <tr style={{ background:"#f8fafc", borderBottom:"1px solid #f1f5f9" }}>
                         {["Patient","Phone","Last Treatment","Review Status","Total Appts","Total Paid"].map(h => (
@@ -1005,6 +1095,7 @@ export default function DentalDashboard() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             )}
