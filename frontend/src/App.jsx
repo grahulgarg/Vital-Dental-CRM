@@ -707,22 +707,43 @@ export default function DentalDashboard() {
   };
 
   const addTreatment = async () => {
-    if (!form.type || !form.date) return;
+    if (!form.date) return;
+    if (!form.type && !form.addConsultation && !form.addXray) return;
+    
     setSaving(true);
     try {
-      const created = await api.createTreatment(selectedPatient.id, {
-        date: form.date, type: form.type,
-        doctor: form.doctor || DOCTORS[0],
-        cost: Number(form.cost) || 0,
-        notes: form.notes || "", status: "Completed"
-      });
-      const updatedPt = { ...selectedPatient, treatments: [created, ...selectedPatient.treatments] };
-      setSelectedPatient(updatedPt);
-      setPatients(prev => prev.map(p => p.id === updatedPt.id ? updatedPt : p));
-      showToast("Treatment saved");
+      const promises = [];
+      const doctor = form.doctor || DOCTORS[0];
+      
+      if (form.addConsultation) {
+        promises.push(api.createTreatment(selectedPatient.id, {
+          date: form.date, type: "Professional Consultation",
+          doctor: doctor, cost: Number(form.consultationCost) || 500,
+          notes: "", status: "Completed"
+        }));
+      }
+      
+      if (form.addXray) {
+        promises.push(api.createTreatment(selectedPatient.id, {
+          date: form.date, type: "IOPA Radiograph (X-Ray)",
+          doctor: doctor, cost: Number(form.xrayCost) || 200,
+          notes: "", status: "Completed"
+        }));
+      }
+      
+      if (form.type) {
+        promises.push(api.createTreatment(selectedPatient.id, {
+          date: form.date, type: form.type,
+          doctor: doctor, cost: Number(form.cost) || 0,
+          notes: form.notes || "", status: "Completed"
+        }));
+      }
+      
+      await Promise.all(promises);
+      showToast("Treatments saved successfully");
       closeModal();
       api.getStats().then(setStats);
-      loadAll(); // Re-fetch all to get the created invoice
+      loadAll(); // Re-fetch all to get the newly created ledger rows
     } catch(e) { showToast(e.message, "error"); }
     finally { setSaving(false); }
   };
@@ -2692,17 +2713,62 @@ export default function DentalDashboard() {
 
       {modal==="add-treatment" && (
         <Modal isMobile={isMobile} title="Add Treatment Record" onClose={closeModal}>
-          <Sel label="Treatment Type" value={form.type||""} onChange={e=>setForm(f=>({...f,type:e.target.value}))}>
-            <option value="">Select type</option>
-            {TREATMENT_TYPES.map(t=><option key={t}>{t}</option>)}
+          <Sel label="Treatment Category" value={form.category||""} onChange={e => {
+              setForm(f=>({...f, category:e.target.value, type:"", cost:""}));
+          }}>
+            <option value="">Select category</option>
+            {RATE_SHEET_DATA.map(c=><option key={c.category} value={c.category}>{c.category}</option>)}
           </Sel>
+          
+          <Sel label="Treatment Procedure" value={form.type||""} onChange={e => {
+              const val = e.target.value;
+              const catObj = RATE_SHEET_DATA.find(c => c.category === form.category);
+              const procObj = catObj ? catObj.procedures.find(p => p.name === val) : null;
+              
+              let defaultCost = "";
+              if (procObj && procObj.rate) {
+                 const match = procObj.rate.match(/(\d+)/);
+                 if (match) defaultCost = match[1];
+              }
+              setForm(f=>({...f, type:val, cost:defaultCost}));
+          }}>
+            <option value="">{form.category ? "Select procedure" : "Select category first"}</option>
+            {form.category && RATE_SHEET_DATA.find(c => c.category === form.category)?.procedures.map(p => (
+                <option key={p.name} value={p.name}>{p.name}</option>
+            ))}
+          </Sel>
+          
           <Sel label="Doctor" value={form.doctor||""} onChange={e=>setForm(f=>({...f,doctor:e.target.value}))}>
             {DOCTORS.map(d=><option key={d}>{d}</option>)}
           </Sel>
+          
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <Inp label="Date" type="date" value={form.date||""} onChange={e=>setForm(f=>({...f,date:e.target.value}))} />
-            <Inp label="Cost (₹)" type="number" placeholder="5000" value={form.cost||""} onChange={e=>setForm(f=>({...f,cost:e.target.value}))} />
+            <Inp label="Cost (₹)" type="number" placeholder="Depends on proc" value={form.cost||""} onChange={e=>setForm(f=>({...f,cost:e.target.value}))} />
           </div>
+          
+          <div style={{ marginTop: 12, marginBottom: 12, background: "#f8fafc", padding: "16px 20px", borderRadius: 12, border: "1px dashed #cbd5e1" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom: form.addConsultation ? 12 : 0 }}>
+                  <input type="checkbox" id="addConsult" checked={!!form.addConsultation} onChange={e => setForm(f=>({...f, addConsultation: e.target.checked, consultationCost: e.target.checked ? "500" : ""}))} style={{ width:18, height:18, cursor:"pointer", accentColor:"#10b981" }} />
+                  <label htmlFor="addConsult" style={{ fontSize:14, fontWeight:600, color:"#334155", cursor:"pointer", userSelect:"none" }}>Add Professional Consultation</label>
+              </div>
+              {form.addConsultation && (
+                  <div style={{ paddingLeft: 28, marginBottom: 12 }}>
+                      <Inp label="Consultation Fee (₹)" type="number" value={form.consultationCost||""} onChange={e=>setForm(f=>({...f, consultationCost:e.target.value}))} />
+                  </div>
+              )}
+              
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom: form.addXray ? 12 : 0 }}>
+                  <input type="checkbox" id="addXray" checked={!!form.addXray} onChange={e => setForm(f=>({...f, addXray: e.target.checked, xrayCost: e.target.checked ? "200" : ""}))} style={{ width:18, height:18, cursor:"pointer", accentColor:"#10b981" }} />
+                  <label htmlFor="addXray" style={{ fontSize:14, fontWeight:600, color:"#334155", cursor:"pointer", userSelect:"none" }}>Add IOPA Radiograph (X-Ray)</label>
+              </div>
+              {form.addXray && (
+                  <div style={{ paddingLeft: 28 }}>
+                      <Inp label="X-Ray Fee (₹)" type="number" value={form.xrayCost||""} onChange={e=>setForm(f=>({...f, xrayCost:e.target.value}))} />
+                  </div>
+              )}
+          </div>
+
           <div style={{ marginBottom:16 }}>
             <label style={{ display:"block", fontSize:13, fontWeight:600, color:"#374151", marginBottom:6 }}>Notes</label>
             <textarea value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}
