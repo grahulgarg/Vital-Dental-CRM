@@ -90,7 +90,8 @@ def create_tables():
             "DO $$ BEGIN ALTER TABLE appointments ADD COLUMN reminder_sent INTEGER DEFAULT 0; EXCEPTION WHEN duplicate_column THEN END; $$;",
             "DO $$ BEGIN ALTER TABLE patients ADD COLUMN age INTEGER DEFAULT NULL; EXCEPTION WHEN duplicate_column THEN END; $$;",
             "DO $$ BEGIN ALTER TABLE patients ADD COLUMN address TEXT DEFAULT ''; EXCEPTION WHEN duplicate_column THEN END; $$;",
-            "DO $$ BEGIN ALTER TABLE payments ADD COLUMN treatment_id INTEGER DEFAULT NULL REFERENCES treatments(id) ON DELETE SET NULL; EXCEPTION WHEN duplicate_column THEN END; $$;"
+            "DO $$ BEGIN ALTER TABLE payments ADD COLUMN treatment_id INTEGER DEFAULT NULL REFERENCES treatments(id) ON DELETE SET NULL; EXCEPTION WHEN duplicate_column THEN END; $$;",
+            "DO $$ BEGIN ALTER TABLE patients ADD COLUMN review_status TEXT DEFAULT 'pending'; EXCEPTION WHEN duplicate_column THEN END; $$;"
         ]
         
         for m in migrations:
@@ -180,6 +181,7 @@ def populate_patient_extras(p):
         p["bloodGroup"]  = p.pop("blood_group", None)
         # age is stored directly as an integer in the DB
         p["isCompleted"] = bool(p.pop("is_completed", 0))
+        p["reviewStatus"] = p.pop("review_status", "pending")
     return p
 
 
@@ -228,6 +230,7 @@ def get_all_patients():
             p["isCompleted"] = bool(p.pop("is_completed", 0))
             p["isRecall"]    = bool(p.pop("is_recall", 0))
             p["recallNote"]  = p.pop("recall_note", "")
+            p["reviewStatus"] = p.pop("review_status", "pending")
             
         return patients
 
